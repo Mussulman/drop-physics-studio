@@ -19,11 +19,13 @@ npm run build
 
 This project includes a small Flask wrapper in `app.py` so PythonAnywhere can serve the Vite build and preserve standalone app routes such as `/actual/start` and `/actual/arrival`.
 
-After cloning on PythonAnywhere, run:
+The production build is committed in `dist/`, so PythonAnywhere does not need Node.js or npm. After cloning on PythonAnywhere, run:
 
 ```bash
-npm install && npm run build && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 ```
+
+If you change the React app later, rebuild locally with `npm run build`, commit the updated `dist/` folder, then pull the new commit on PythonAnywhere.
 
 In the PythonAnywhere Web tab, set the WSGI file to import the Flask app:
 
