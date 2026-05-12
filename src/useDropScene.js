@@ -29,12 +29,13 @@ function buildSceneMetrics({
   dropHeight,
   impactOffset,
   landingDepth,
+  containerYOffset = 0,
 }) {
   const tableWidth = 232 * tableScale
   const tableHeight = (tableWidth * tableAssetHeight) / tableAssetWidth
   const tableX = (stageWidth - tableWidth) / 2
   const tableY = stageHeight * 0.62
-  const supportY = tableY + tableHeight * 0.17 + landingDepth
+  const supportY = tableY + tableHeight * 0.34 + landingDepth + containerYOffset
   const deckHeight = 10
 
   const dropWidth = 132 * containerScale
@@ -131,6 +132,7 @@ export function useDropScene({
   impactOffset,
   dropHeight,
   landingDepth,
+  containerYOffset,
   settleSoftness,
   dustStrength,
   replayToken,
@@ -149,6 +151,7 @@ export function useDropScene({
         dropHeight,
         impactOffset,
         landingDepth,
+        containerYOffset,
       }),
     [
       containerAssetHeight,
@@ -157,6 +160,7 @@ export function useDropScene({
       dropHeight,
       impactOffset,
       landingDepth,
+      containerYOffset,
       stageHeight,
       stageWidth,
       tableAssetHeight,
@@ -379,6 +383,7 @@ export function useDropScene({
     dustStrength,
     impactOffset,
     landingDepth,
+    containerYOffset,
     replayToken,
     scene,
     settleSoftness,

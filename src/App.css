@@ -432,11 +432,11 @@
 .start-stage.is-fullscreen {
   width: 100%;
   min-height: 100svh;
-  grid-template-rows: auto minmax(220px, 1fr) auto;
+  grid-template-rows: auto minmax(180px, 1fr) auto;
   padding:
-    clamp(32px, 7svh, 72px)
-    clamp(16px, 5vw, 80px)
-    clamp(132px, 19svh, 190px);
+    clamp(24px, 5svh, 52px)
+    clamp(16px, 4vw, 64px)
+    clamp(78px, 11svh, 124px);
 }
 
 .start-copy-block {
@@ -460,7 +460,7 @@
 }
 
 .start-stage.is-fullscreen .start-copy-line {
-  font-size: clamp(2.15rem, 5.5vw, 6.2rem);
+  font-size: clamp(1.85rem, 4.1vw, 4.65rem);
   line-height: 1.04;
   letter-spacing: 0;
 }
@@ -528,8 +528,8 @@
 
 .start-stage.is-fullscreen .start-icon-row {
   align-self: center;
-  gap: clamp(24px, 6vw, 88px);
-  margin-top: clamp(30px, 6svh, 88px);
+  gap: clamp(20px, 4.5vw, 72px);
+  margin-top: clamp(24px, 4svh, 56px);
 }
 
 .start-option {
@@ -550,11 +550,12 @@
 }
 
 .start-stage.is-fullscreen .start-option {
-  flex: 0 1 clamp(170px, 23vw, 420px);
+  flex: 0 1 clamp(140px, 18vw, 320px);
 }
 
 .start-stage.is-fullscreen .start-option-art {
-  width: clamp(150px, 18vw, 340px);
+  --icon-scale: 1.18;
+  width: clamp(128px, 13.5vw, 260px);
 }
 
 .start-option.is-drive .start-option-art {
@@ -564,7 +565,7 @@
 }
 
 .start-stage.is-fullscreen .start-option.is-drive .start-option-art {
-  width: clamp(150px, 18vw, 340px);
+  width: clamp(128px, 13.5vw, 260px);
 }
 
 .start-table-wrap {
@@ -581,7 +582,62 @@
 }
 
 .start-stage.is-fullscreen .start-table {
-  width: clamp(260px, 34vw, 720px);
+  width: clamp(220px, 29vw, 560px);
+}
+
+.temporary-y-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 30%, var(--panel-border));
+}
+
+.temporary-y-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.temporary-y-value {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  color: var(--ink-soft);
+}
+
+.temporary-y-value strong {
+  color: var(--ink-strong);
+  font-family: 'IBM Plex Mono', 'Cascadia Code', monospace;
+}
+
+.temporary-y-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.y-nudge-button,
+.y-finalize-button {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.72rem 0.85rem;
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink-strong);
+  background: var(--accent-soft);
+}
+
+.y-finalize-button {
+  color: #fff;
+  background: var(--accent);
+}
+
+.temporary-y-note {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 0.84rem;
 }
 
 @keyframes start-float {
@@ -666,11 +722,11 @@
   }
 
   .start-stage.is-fullscreen {
-    padding: 28px 12px 46svh;
+    padding: 28px 12px 30svh;
   }
 
   .start-stage.is-fullscreen .start-copy-line {
-    font-size: clamp(2rem, 12vw, 4.1rem);
+    font-size: clamp(1.75rem, 9vw, 3.25rem);
   }
 
   .start-stage.is-fullscreen .start-icon-row {
@@ -680,10 +736,11 @@
 
   .start-stage.is-fullscreen .start-option-art,
   .start-stage.is-fullscreen .start-option.is-drive .start-option-art {
-    width: clamp(132px, 35vw, 210px);
+    --icon-scale: 1.12;
+    width: clamp(110px, 27vw, 180px);
   }
 
   .start-stage.is-fullscreen .start-table {
-    width: min(78vw, 360px);
+    width: min(70vw, 310px);
   }
 }

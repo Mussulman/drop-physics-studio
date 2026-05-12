@@ -12,6 +12,9 @@ import { buildProvidedAssetSet } from './providedAssets'
 import { buildStartViewAssetSet } from './startViewAssets'
 import { useDropScene } from './useDropScene'
 
+const ARRIVAL_Y_OFFSET_STORAGE_KEY = 'dropPhysicsArrivalContainerYOffset'
+const TEMPORARY_Y_NUDGE_CONTROLS_ENABLED = true
+
 const DEFAULT_ARRIVAL_SETTINGS = {
   containerColorId: 'original',
   tableColorId: 'original',
@@ -20,6 +23,8 @@ const DEFAULT_ARRIVAL_SETTINGS = {
   dropAngle: 10,
   impactOffset: -26,
   landingDepth: 0,
+  // Finalize the temporary y-nudge here, then remove TemporaryContainerYControl.
+  containerYOffset: 0,
   dropHeight: 228,
   settleSoftness: 78,
   dustStrength: 42,
@@ -43,6 +48,7 @@ const ARRIVAL_ACTUAL_KEYS = [
   'dropAngle',
   'impactOffset',
   'landingDepth',
+  'containerYOffset',
   'dropHeight',
   'settleSoftness',
   'dustStrength',
@@ -55,6 +61,7 @@ const NUMBER_RANGES = {
   dropAngle: [2, 18],
   impactOffset: [-54, 54],
   landingDepth: [-34, 34],
+  containerYOffset: [-64, 64],
   dropHeight: [148, 300],
   settleSoftness: [20, 100],
   dustStrength: [0, 100],
@@ -70,6 +77,46 @@ const THEME_COLOR_IDS = new Set(
 
 function clampValue(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value))
+}
+
+function getStoredArrivalContainerYOffset() {
+  try {
+    const storedValue = window.localStorage.getItem(ARRIVAL_Y_OFFSET_STORAGE_KEY)
+    const parsedValue = Number(storedValue)
+
+    return Number.isFinite(parsedValue) ? parsedValue : null
+  } catch {
+    return null
+  }
+}
+
+function getDefaultSettings() {
+  const storedContainerYOffset = getStoredArrivalContainerYOffset()
+
+  if (storedContainerYOffset === null) {
+    return DEFAULT_SETTINGS
+  }
+
+  return sanitizeActualSettings({
+    ...DEFAULT_SETTINGS,
+    containerYOffset: storedContainerYOffset,
+  })
+}
+
+function finalizeArrivalContainerYOffset(containerYOffset) {
+  try {
+    window.localStorage.setItem(
+      ARRIVAL_Y_OFFSET_STORAGE_KEY,
+      String(containerYOffset),
+    )
+  } catch {
+    // The URL still keeps the finalized value when localStorage is blocked.
+  }
+}
+
+function getNudgedContainerYOffset(currentValue, delta) {
+  const [minimum, maximum] = NUMBER_RANGES.containerYOffset
+  return clampValue(Number(currentValue) + delta, minimum, maximum)
 }
 
 function getActualKeys(page) {
@@ -131,7 +178,7 @@ function readActualRouteSettings() {
   const page = routeMatch[1]
   const params = new URLSearchParams(window.location.search)
   const routeSettings = {
-    ...DEFAULT_SETTINGS,
+    ...getDefaultSettings(),
     page,
   }
 
@@ -181,7 +228,7 @@ function App() {
 }
 
 function StudioApp() {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState(getDefaultSettings)
   const [replayToken, setReplayToken] = useState(0)
 
   const isArrivalPage = settings.page === 'arrival'
@@ -227,6 +274,7 @@ function StudioApp() {
     dropAngle: settings.dropAngle,
     impactOffset: settings.impactOffset,
     landingDepth: settings.landingDepth,
+    containerYOffset: settings.containerYOffset,
     dropHeight: settings.dropHeight,
     settleSoftness: settings.settleSoftness / 100,
     dustStrength: settings.dustStrength / 100,
@@ -260,8 +308,17 @@ function StudioApp() {
     setReplayToken((current) => current + 1)
   }
 
-  const openActualPage = () => {
-    window.location.assign(buildActualPagePath(settings))
+  const createActualPage = () => {
+    const pageUrl = new URL(buildActualPagePath(settings), window.location.origin)
+    const createdWindow = window.open(
+      pageUrl.toString(),
+      '_blank',
+      'noopener,noreferrer',
+    )
+
+    if (!createdWindow) {
+      window.location.assign(pageUrl.toString())
+    }
   }
 
   return (
@@ -303,9 +360,9 @@ function StudioApp() {
             <button
               type="button"
               className="primary-button"
-              onClick={openActualPage}
+              onClick={createActualPage}
             >
-              Open Actual Page
+              Create HTML Page
             </button>
             {isArrivalPage ? (
               <>
@@ -421,6 +478,32 @@ function StudioApp() {
                 currentValue={settings.landingDepth}
                 onChange={updateNumber('landingDepth')}
               />
+              {TEMPORARY_Y_NUDGE_CONTROLS_ENABLED ? (
+                <div className="temporary-y-card">
+                  <SectionTitle
+                    title="Container Y Nudge"
+                    subtitle="Temporary helper: Up/Down moves by 1px. Finalize stores the value so this panel can be removed later."
+                  />
+                  <TemporaryContainerYControl
+                    value={settings.containerYOffset}
+                    onUp={() =>
+                      updateChoice(
+                        'containerYOffset',
+                        getNudgedContainerYOffset(settings.containerYOffset, -1),
+                      )
+                    }
+                    onDown={() =>
+                      updateChoice(
+                        'containerYOffset',
+                        getNudgedContainerYOffset(settings.containerYOffset, 1),
+                      )
+                    }
+                    onFinalize={() =>
+                      finalizeArrivalContainerYOffset(settings.containerYOffset)
+                    }
+                  />
+                </div>
+              ) : null}
               <RangeField
                 label="Drop height"
                 value={`${settings.dropHeight}px`}
@@ -664,6 +747,7 @@ function ActualArrivalCanvas({ settings, screenMode }) {
     dropAngle: settings.dropAngle,
     impactOffset: settings.impactOffset * sceneScale,
     landingDepth: settings.landingDepth * sceneScale,
+    containerYOffset: settings.containerYOffset * sceneScale,
     dropHeight: settings.dropHeight * sceneScale,
     settleSoftness: settings.settleSoftness / 100,
     dustStrength: settings.dustStrength / 100,
@@ -737,6 +821,29 @@ function ActualColorControls({ settings, onChoice }) {
 
       {isArrivalPage ? (
         <>
+          {TEMPORARY_Y_NUDGE_CONTROLS_ENABLED ? (
+            <ActualControlBlock label="Container Y">
+              <TemporaryContainerYControl
+                value={settings.containerYOffset}
+                onUp={() =>
+                  onChoice(
+                    'containerYOffset',
+                    getNudgedContainerYOffset(settings.containerYOffset, -1),
+                  )
+                }
+                onDown={() =>
+                  onChoice(
+                    'containerYOffset',
+                    getNudgedContainerYOffset(settings.containerYOffset, 1),
+                  )
+                }
+                onFinalize={() =>
+                  finalizeArrivalContainerYOffset(settings.containerYOffset)
+                }
+              />
+            </ActualControlBlock>
+          ) : null}
+
           <ActualControlBlock label="Container">
             <PaletteChooser
               groups={PALETTE_GROUPS}
@@ -777,6 +884,41 @@ function ActualControlBlock({ label, children }) {
     <div className="actual-control-block">
       <span className="actual-control-label">{label}</span>
       {children}
+    </div>
+  )
+}
+
+function TemporaryContainerYControl({ value, onUp, onDown, onFinalize }) {
+  const [savedValue, setSavedValue] = useState(null)
+  const formattedValue = `${value > 0 ? '+' : ''}${value}px`
+
+  const finalizeValue = () => {
+    onFinalize()
+    setSavedValue(value)
+  }
+
+  return (
+    <div className="temporary-y-controls">
+      <div className="temporary-y-value">
+        <span>Y offset</span>
+        <strong>{formattedValue}</strong>
+      </div>
+      <div className="temporary-y-actions">
+        <button type="button" className="y-nudge-button" onClick={onUp}>
+          Up
+        </button>
+        <button type="button" className="y-nudge-button" onClick={onDown}>
+          Down
+        </button>
+        <button type="button" className="y-finalize-button" onClick={finalizeValue}>
+          Finalize
+        </button>
+      </div>
+      <p className="temporary-y-note">
+        {savedValue === value
+          ? `Saved at ${formattedValue}. Keep this value in containerYOffset, then remove this control.`
+          : 'Up decreases Y by 1px. Down increases Y by 1px.'}
+      </p>
     </div>
   )
 }
